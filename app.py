@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 
-# Define the CNN architecture (must match the model that created the .pth file)
+# Define the CNN architecture
 class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
@@ -18,42 +18,61 @@ class SimpleCNN(nn.Module):
         x = self.fc1(x)
         return x
 
-# Load the model
+# Load the pre-trained model
 model = SimpleCNN()
 model.load_state_dict(torch.load("model/simple_cifar10_cnn.pth", map_location=torch.device("cpu")))
-model.eval()  # Set model to evaluation mode
+model.eval()  # Set the model to evaluation mode
 
-# Define the CIFAR-10 class names
-classes = ('airplane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+# CIFAR-10 class names
+classes = ('Airplane', 'Car', 'Bird', 'Cat', 'Deer', 'Dog', 'Frog', 'Horse', 'Ship', 'Truck')
 
-# Define image transformation
+# Image transformation pipeline
 transform = transforms.Compose([
-    transforms.Resize((32, 32)),  # CIFAR-10 images are 32x32
+    transforms.Resize((32, 32)),  # Resize image to 32x32
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize to match CIFAR-10 distribution
 ])
 
-# Streamlit UI code
-st.title("Image Classification with CNN")
-st.write("Upload an image, and the model will classify it based on CIFAR-10 classes.")
+# Streamlit app UI
+st.set_page_config(page_title="CIFAR-10 Image Classifier", page_icon="🖼️", layout="centered")
+st.title("🚀 CIFAR-10 Image Classification")
+st.write("""
+Upload an image, and this application will predict its class using a pre-trained 
+Convolutional Neural Network (CNN). Supported classes are based on the CIFAR-10 dataset.
+""")
 
-# Image upload
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+# Upload image section
+st.sidebar.header("📂 Upload Image")
+uploaded_file = st.sidebar.file_uploader("Choose a file", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    # Open the image and display it
+if uploaded_file:
+    # Display the uploaded image
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-    st.write("Classifying...")
+    st.image(image, caption="Your Uploaded Image", use_column_width=True)
 
     # Preprocess the image
+    st.write("Processing your image...")
     image = transform(image).unsqueeze(0)  # Add batch dimension
 
-    # Make prediction
+    # Perform prediction
     with torch.no_grad():
         output = model(image)
         _, predicted = torch.max(output, 1)
         label = classes[predicted.item()]
 
-    # Display the result
-    st.write(f"Prediction: **{label}**")
+    # Display the prediction
+    st.markdown(f"### 🎯 Prediction: **{label}**")
+    st.balloons()  # Add some flair
+else:
+    st.sidebar.write("👈 Please upload an image to begin!")
+
+# Additional information
+st.sidebar.subheader("About")
+st.sidebar.write("""
+This app uses a simple CNN trained on CIFAR-10 to classify images. It is built with:
+- **Streamlit** for the web interface
+- **PyTorch** for deep learning
+- **Pillow** for image processing
+""")
+
+st.sidebar.write("🔗 [Learn more about CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html)")
